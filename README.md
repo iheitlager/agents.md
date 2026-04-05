@@ -87,7 +87,7 @@ id = "system/language/python"
 name = "Python"
 description = "Python 3.12+ conventions: uv, ruff, pyright, pytest"
 version = "1.0.0"
-aae_level = 3          # AAE enforcement level (1-4)
+aae_level = "L3"       # AAE enforcement level (L1–L4)
 authors = ["Schuberg Philis"]
 
 [requirements]
@@ -107,9 +107,9 @@ tools = ["claude-code", "opencode", "github-copilot", "cursor"]
 
 ---
 
-## AAE enforcement ladder
+## AAE (Agents-as-Enforcers) enforcement ladder
 
-Agents-as-Enforcers (AAE) defines how strictly a pack enforces its conventions:
+AAE defines how strictly a pack enforces its conventions:
 
 | Level | Name | Mechanism | When to use |
 |-------|------|-----------|-------------|
