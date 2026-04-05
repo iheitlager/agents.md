@@ -1,0 +1,26 @@
+[pack]
+id = "function/security/supply-chain"
+name = "Supply Chain Security"
+description = "GitHub Actions supply chain hardening: pin actions to full commit SHA, not mutable tags"
+version = "1.0.0"
+aae_level = "L2"
+authors = ["Ilja Heitlager <iheitlager@schubergphilis.com>"]
+homepage = "https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions"
+license = "Apache-2.0"
+deprecated = false
+
+[requirements]
+tools = []
+
+[targets]
+agents_md = true
+claude_md = false
+commands = false
+hooks = false
+checks = false
+
+[relations]
+related = ["function/ci-cd/github-actions"]
+
+[compatibility]
+tools = ["claude-code", "opencode", "github-copilot", "cursor"]
