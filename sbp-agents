@@ -8,6 +8,7 @@
 
 set -euo pipefail
 
+VERSION="0.1.0"
 SBP_CATALOG_URL="${SBP_CATALOG_URL:-https://raw.githubusercontent.com/schubergphilis/agents.md/main}"
 SBP_LOCAL_DIR=".sbp"
 SBP_GLOBAL_DIR="${HOME}/.config/sbp-agents"
@@ -391,6 +392,7 @@ case "$COMMAND" in
   update)         cmd_update ;;
   remove)         cmd_remove "${ARGS[0]:-}" ;;
   status)         cmd_status ;;
-  help|--help|-h) cmd_help ;;
+  help|--help|-h)    cmd_help ;;
+  version|--version) echo "sbp-agents ${VERSION}" ;;
   *) die "unknown command: ${COMMAND}  (try: sbp-agents help)" ;;
 esac
