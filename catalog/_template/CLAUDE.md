@@ -1,7 +1,8 @@
-# Claude Code-specific conventions for <!-- pack: system/category/name -->
+<!-- BEGIN pack: system/category/name -->
 
 <!-- This file is optional. Use it for instructions that are specific to
      Claude Code and would not apply to other AI coding assistants.
+     Replace the pack ID in the markers above and below with your pack's id.
      Examples: slash command references, tool use preferences,
      MCP server instructions, permission hints. -->
 
@@ -22,3 +23,5 @@
 <!-- Hint at what bash commands this pack's workflows require. -->
 
 <!-- - This pack's hooks run `tool check` — allow it in settings. -->
+
+<!-- END pack: system/category/name -->

@@ -15,14 +15,30 @@ description = "Short description of the conventions this pack enforces"
 # Semantic version of this pack
 version = "0.1.0"
 
-# AAE enforcement level (1-4):
-#   1 = inform (docs only)
-#   2 = soft enforce (agent instructions)
-#   3 = hook enforce (pre-commit / pre-push)
-#   4 = CI enforce (pipeline checks)
-aae_level = 2
+# AAE enforcement level — use the L-prefix string (L1–L4):
+#   L1 = inform (docs only)
+#   L2 = soft enforce (agent instructions)
+#   L3 = hook enforce (pre-commit / pre-push)
+#   L4 = CI enforce (pipeline checks)
+aae_level = "L2"
 
 authors = ["Your Name <you@example.com>"]
+
+# Link to upstream documentation or the pack's source repository (optional)
+# homepage = "https://example.com/docs/pack"
+
+# SPDX license identifier — defaults to repo license (Apache-2.0)
+license = "Apache-2.0"
+
+# Minimum sbp-agents CLI version required to install this pack (optional)
+# min_cli_version = "1.0.0"
+
+# If this pack supersedes an older pack, list the IDs it replaces (optional)
+# replaces = ["old/category/name"]
+
+# Set to true and add a `replacement` field when this pack is no longer maintained
+deprecated = false
+# replacement = "new/category/name"
 
 [requirements]
 # CLI tools that must be installed for hooks/checks to work
@@ -31,6 +47,7 @@ tools = []
 # Minimum language/runtime version (omit if not applicable)
 # min_python = "3.12"
 # min_node = "20"
+# min_go = "1.22"
 
 [targets]
 # Which files/dirs this pack installs into the target project
@@ -39,6 +56,16 @@ claude_md = false    # CLAUDE.md fragment (Claude Code only)
 commands = false     # .claude/commands/ slash commands
 hooks = false        # .git/hooks/ pre-commit / pre-push scripts
 checks = false       # CI validation scripts
+
+[relations]
+# Packs this pack depends on — installed automatically
+# requires = ["system/language/python"]
+
+# Packs that cover a secondary axis for this pack (informational, not auto-installed)
+# related = ["function/testing/unit"]
+
+# Packs that conflict with this one — installation will warn
+# conflicts = []
 
 [compatibility]
 # AI tools this pack has been verified with

@@ -1,0 +1,12 @@
+# Convention pack catalog index
+# This file is the source of truth for `sbp-agents list`.
+# Add an entry here for each pack under catalog/.
+# Format: one [[pack]] block per convention pack.
+
+# [[pack]]
+# id = "system/language/python"
+# name = "Python"
+# description = "Python 3.12+ conventions: uv, ruff, pyright, pytest"
+# version = "1.0.0"
+# aae_level = "L3"
+# path = "catalog/system/language/python"

@@ -1,6 +1,6 @@
-# <!-- BEGIN pack: system/category/name -->
+<!-- BEGIN pack: system/category/name -->
 
-<!-- Replace the section title above and below with your pack ID. -->
+<!-- Replace the pack ID in the markers above and below with your pack's id from manifest.toml. -->
 <!-- Keep section markers so fragments can be merged/updated automatically. -->
 
 ## Pack Name conventions
@@ -43,4 +43,4 @@ tool --version
 - [ ] `tool test` passes with all tests green
 - [ ] No secrets or credentials in committed files
 
-# <!-- END pack: system/category/name -->
+<!-- END pack: system/category/name -->
