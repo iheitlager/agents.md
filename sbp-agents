@@ -1,0 +1,396 @@
+#!/usr/bin/env bash
+# sbp-agents — SBP convention pack manager
+# Installs convention packs from the agents.md catalog into projects.
+#
+# Install:
+#   curl -s https://raw.githubusercontent.com/schubergphilis/agents.md/main/sbp-agents \
+#     | sudo install -m 755 /dev/stdin /usr/local/bin/sbp-agents
+
+set -euo pipefail
+
+SBP_CATALOG_URL="${SBP_CATALOG_URL:-https://raw.githubusercontent.com/schubergphilis/agents.md/main}"
+SBP_LOCAL_DIR=".sbp"
+SBP_GLOBAL_DIR="${HOME}/.config/sbp-agents"
+GLOBAL=false
+UPDATING=false
+
+# ─── utilities ───────────────────────────────────────────────────────────────
+
+die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
+info() { printf '  %s\n' "$*"; }
+ok()   { printf '  \033[32m✓\033[0m %s\n' "$*"; }
+
+fetch() {
+  curl -fsSL "$1" || die "failed to fetch $1"
+}
+
+# Extract a scalar value from a TOML section.
+# Usage: toml_get <file> <section> <key>
+toml_get() {
+  local file="$1" section="[$2]" key="$3"
+  awk -v sec="$section" -v k="$key" '
+    $0 == sec          { in_sec=1; next }
+    /^\[/ && in_sec    { in_sec=0 }
+    in_sec && $0 ~ "^" k " *= *" {
+      sub(/^[^=]+=[ \t]*/, "")   # strip "key = "
+      sub(/#.*$/, "")             # strip inline comment
+      gsub(/^[ \t"]+|[ \t"]+$/, "") # trim whitespace and quotes
+      print; exit
+    }
+  ' "$file"
+}
+
+# Extract inline array items from a TOML section.
+# Usage: toml_array <file> <section> <key>
+# Prints one item per line; empty output if key absent or array empty.
+toml_array() {
+  local file="$1" section="[$2]" key="$3"
+  awk -v sec="$section" -v k="$key" '
+    $0 == sec          { in_sec=1; next }
+    /^\[/ && in_sec    { in_sec=0 }
+    in_sec && $0 ~ "^" k " *= *" {
+      sub(/.*\[/, ""); sub(/\].*/, "")  # keep content between [ ]
+      gsub(/"/, ""); gsub(/ /, "")
+      n = split($0, a, ",")
+      for (i = 1; i <= n; i++) if (a[i] != "") print a[i]
+      exit
+    }
+  ' "$file"
+}
+
+# ─── fragment merging ────────────────────────────────────────────────────────
+
+# Insert or replace a fragment between HTML comment markers in a file.
+# The fragment string must already include the BEGIN/END markers.
+merge_fragment() {
+  local target="$1" pack_id="$2" fragment="$3"
+  local begin="<!-- BEGIN pack: ${pack_id} -->"
+  local end="<!-- END pack: ${pack_id} -->"
+
+  mkdir -p "$(dirname "$target")"
+  touch "$target"
+
+  if grep -qF "$begin" "$target" 2>/dev/null; then
+    # Remove existing block (markers inclusive) then re-append below
+    local tmp
+    tmp=$(mktemp)
+    awk -v b="$begin" -v e="$end" '
+      index($0, b) { skip=1 }
+      skip && index($0, e) { skip=0; next }
+      !skip { print }
+    ' "$target" > "$tmp" && mv "$tmp" "$target"
+    info "updated ${target}"
+  else
+    info "installed into ${target}"
+  fi
+
+  printf '\n%s\n' "$fragment" >> "$target"
+}
+
+# Remove a pack's fragment block from a file.
+remove_fragment() {
+  local target="$1" pack_id="$2"
+  local begin="<!-- BEGIN pack: ${pack_id} -->"
+  local end="<!-- END pack: ${pack_id} -->"
+
+  [[ -f "$target" ]] || return 0
+  grep -qF "$begin" "$target" 2>/dev/null || return 0
+
+  local tmp
+  tmp=$(mktemp)
+  awk -v b="$begin" -v e="$end" '
+    index($0, b) { skip=1 }
+    skip && index($0, e) { skip=0; next }
+    !skip { print }
+  ' "$target" > "$tmp" && mv "$tmp" "$target"
+  info "removed from ${target}"
+}
+
+# ─── manifest tracking ───────────────────────────────────────────────────────
+
+_manifest_file() {
+  if [[ "$GLOBAL" == "true" ]]; then
+    echo "${SBP_GLOBAL_DIR}/manifest.toml"
+  else
+    echo "${SBP_LOCAL_DIR}/manifest.toml"
+  fi
+}
+
+is_installed() {
+  local mfile
+  mfile=$(_manifest_file)
+  [[ -f "$mfile" ]] && grep -qF "\"$1\"" "$mfile"
+}
+
+# Remove the [[installed]] block for a given pack_id from stdin (used as filter).
+_filter_block() {
+  local pack_id="$1"
+  awk -v target="$pack_id" '
+    /^\[\[installed\]\]$/ {
+      delete buf; blen=0; in_blk=1; is_target=0
+      buf[++blen] = $0; next
+    }
+    in_blk {
+      buf[++blen] = $0
+      if (/^id = / && index($0, "\"" target "\"")) is_target = 1
+      if (/^$/) {
+        if (!is_target) { for (i = 1; i <= blen; i++) print buf[i] }
+        in_blk = 0; next
+      }
+      next
+    }
+    { print }
+    END {
+      if (in_blk && !is_target) { for (i = 1; i <= blen; i++) print buf[i] }
+    }
+  '
+}
+
+record_install() {
+  local pack_id="$1" version="$2"
+  local mfile
+  mfile=$(_manifest_file)
+  mkdir -p "$(dirname "$mfile")"
+
+  # Remove stale entry if present
+  if [[ -f "$mfile" ]] && grep -qF "\"${pack_id}\"" "$mfile"; then
+    local tmp
+    tmp=$(mktemp)
+    _filter_block "$pack_id" < "$mfile" > "$tmp" && mv "$tmp" "$mfile"
+  fi
+
+  printf '\n[[installed]]\nid = "%s"\nversion = "%s"\nglobal = %s\n' \
+    "$pack_id" "$version" "$GLOBAL" >> "$mfile"
+}
+
+record_remove() {
+  local pack_id="$1"
+  local mfile
+  mfile=$(_manifest_file)
+  [[ -f "$mfile" ]] || return 0
+
+  local tmp
+  tmp=$(mktemp)
+  _filter_block "$pack_id" < "$mfile" > "$tmp" && mv "$tmp" "$mfile"
+}
+
+# ─── commands ────────────────────────────────────────────────────────────────
+
+cmd_list() {
+  echo "Available convention packs:"
+  echo ""
+  fetch "${SBP_CATALOG_URL}/catalog/index.toml" | awk '
+    /^\[\[pack\]\]/ {
+      if (id != "") printf "  %-42s  %-4s  %s\n", id, aae, desc
+      id = ""; aae = ""; desc = ""
+    }
+    /^id = /          { id   = substr($0, 6);  gsub(/"/, "", id)   }
+    /^aae_level = /   { aae  = substr($0, 12); gsub(/"/, "", aae)  }
+    /^description = / { desc = substr($0, 15); gsub(/"/, "", desc) }
+    END               { if (id != "") printf "  %-42s  %-4s  %s\n", id, aae, desc }
+  '
+}
+
+cmd_add() {
+  local pack_id="${1:-}"
+  [[ -n "$pack_id" ]] || die "usage: sbp-agents add [--global] <pack-id>"
+
+  if [[ "$UPDATING" == "false" ]] && is_installed "$pack_id"; then
+    info "${pack_id} already installed (run 'sbp-agents update' to refresh)"
+    return 0
+  fi
+
+  echo "Installing ${pack_id}..."
+
+  local pack_url="${SBP_CATALOG_URL}/catalog/${pack_id}"
+
+  # Fetch manifest to a temp file for TOML parsing
+  local tmpmanifest
+  tmpmanifest=$(mktemp)
+  trap 'rm -f "${tmpmanifest:-}"; trap - RETURN' RETURN
+  fetch "${pack_url}/manifest.toml" > "$tmpmanifest"
+
+  local deprecated
+  deprecated=$(toml_get "$tmpmanifest" "pack" "deprecated")
+  [[ "$deprecated" != "true" ]] || die "${pack_id} is deprecated"
+
+  local version
+  version=$(toml_get "$tmpmanifest" "pack" "version")
+
+  # Install dependencies first (recursive; already-installed packs are skipped)
+  local dep
+  while IFS= read -r dep; do
+    [[ -n "$dep" ]] || continue
+    cmd_add "$dep"
+  done < <(toml_array "$tmpmanifest" "relations" "requires")
+
+  # Determine install root
+  local root="."
+  [[ "$GLOBAL" != "true" ]] || root="$SBP_GLOBAL_DIR"
+
+  # AGENTS.md → AGENTS.md (OpenCode), copilot-instructions.md, .cursorrules
+  if [[ "$(toml_get "$tmpmanifest" "targets" "agents_md")" == "true" ]]; then
+    local agents_frag
+    agents_frag=$(fetch "${pack_url}/AGENTS.md")
+    merge_fragment "${root}/AGENTS.md"                          "$pack_id" "$agents_frag"
+    merge_fragment "${root}/.github/copilot-instructions.md"    "$pack_id" "$agents_frag"
+    merge_fragment "${root}/.cursorrules"                       "$pack_id" "$agents_frag"
+  fi
+
+  # CLAUDE.md → CLAUDE.md (Claude Code)
+  if [[ "$(toml_get "$tmpmanifest" "targets" "claude_md")" == "true" ]]; then
+    local claude_frag
+    claude_frag=$(fetch "${pack_url}/CLAUDE.md")
+    if [[ "$GLOBAL" == "true" ]]; then
+      merge_fragment "${HOME}/.claude/CLAUDE.md" "$pack_id" "$claude_frag"
+    else
+      merge_fragment "${root}/CLAUDE.md" "$pack_id" "$claude_frag"
+    fi
+  fi
+
+  # Hooks → .sbp/hooks/ + symlink into .git/hooks/
+  if [[ "$(toml_get "$tmpmanifest" "targets" "hooks")" == "true" ]]; then
+    local hooks_dir="${root}/.sbp/hooks"
+    mkdir -p "$hooks_dir"
+    local hook
+    for hook in pre-commit pre-push; do
+      local hook_content
+      if hook_content=$(fetch "${pack_url}/hooks/${hook}" 2>/dev/null); then
+        printf '%s\n' "$hook_content" > "${hooks_dir}/${hook}"
+        chmod +x "${hooks_dir}/${hook}"
+        if [[ "$GLOBAL" != "true" ]] && [[ -d ".git/hooks" ]]; then
+          ln -sf "../../.sbp/hooks/${hook}" ".git/hooks/${hook}"
+        fi
+        info "hook installed: ${hook}"
+      fi
+    done
+  fi
+
+  # CI checks → .github/workflows/
+  if [[ "$(toml_get "$tmpmanifest" "targets" "checks")" == "true" ]]; then
+    local checks_dir="${root}/.github/workflows"
+    mkdir -p "$checks_dir"
+    local check_file="${checks_dir}/sbp-${pack_id//\//-}.sh"
+    if fetch "${pack_url}/checks/validate.sh" > "$check_file" 2>/dev/null; then
+      chmod +x "$check_file"
+      info "CI check installed: ${check_file}"
+    fi
+  fi
+
+  # Slash commands (.claude/commands/)
+  if [[ "$(toml_get "$tmpmanifest" "targets" "commands")" == "true" ]]; then
+    info "note: install commands manually from catalog/${pack_id}/commands/"
+  fi
+
+  record_install "$pack_id" "$version"
+  ok "${pack_id} v${version}"
+}
+
+cmd_update() {
+  local mfile
+  mfile=$(_manifest_file)
+  [[ -f "$mfile" ]] || die "nothing installed — run 'sbp-agents add <pack-id>' first"
+
+  echo "Updating installed packs..."
+  UPDATING=true
+  local pack_id
+  while IFS= read -r pack_id; do
+    [[ -n "$pack_id" ]] || continue
+    cmd_add "$pack_id"
+  done < <(awk '/^id = / { gsub(/"/, "", $3); print $3 }' "$mfile")
+}
+
+cmd_remove() {
+  local pack_id="${1:-}"
+  [[ -n "$pack_id" ]] || die "usage: sbp-agents remove <pack-id>"
+
+  echo "Removing ${pack_id}..."
+
+  local root="."
+  [[ "$GLOBAL" != "true" ]] || root="$SBP_GLOBAL_DIR"
+
+  remove_fragment "${root}/AGENTS.md"                        "$pack_id"
+  remove_fragment "${root}/CLAUDE.md"                        "$pack_id"
+  remove_fragment "${root}/.github/copilot-instructions.md"  "$pack_id"
+  remove_fragment "${root}/.cursorrules"                     "$pack_id"
+
+  if [[ "$GLOBAL" == "true" ]]; then
+    remove_fragment "${HOME}/.claude/CLAUDE.md" "$pack_id"
+  fi
+
+  record_remove "$pack_id"
+  ok "${pack_id} removed"
+}
+
+cmd_status() {
+  local mfile
+  mfile=$(_manifest_file)
+
+  if [[ ! -f "$mfile" ]]; then
+    echo "No packs installed."
+    return 0
+  fi
+
+  echo "Installed packs:"
+  echo ""
+  awk '
+    /^\[\[installed\]\]$/ { in_blk=1; id=""; ver=""; scope="local"; next }
+    in_blk && /^id = /        { id  = substr($0, 6);  gsub(/"/, "", id)  }
+    in_blk && /^version = /   { ver = substr($0, 11); gsub(/"/, "", ver) }
+    in_blk && /^global = true/ { scope = "global" }
+    in_blk && /^$/ {
+      if (id != "") printf "  %-42s  v%-8s  %s\n", id, ver, scope
+      in_blk = 0
+    }
+    END { if (id != "") printf "  %-42s  v%-8s  %s\n", id, ver, scope }
+  ' "$mfile"
+}
+
+cmd_help() {
+  cat <<'EOF'
+sbp-agents — SBP convention pack manager
+
+Usage:
+  sbp-agents list                     Show available packs
+  sbp-agents add <pack-id>            Install a convention pack (local)
+  sbp-agents add --global <pack-id>   Install globally (~/.config/sbp-agents/)
+  sbp-agents update                   Update all installed packs
+  sbp-agents remove <pack-id>         Remove a convention pack
+  sbp-agents status                   Show installed packs
+
+Options:
+  --global    Install to ~/.config/sbp-agents/ and ~/.claude/CLAUDE.md
+
+Environment:
+  SBP_CATALOG_URL    Override catalog base URL
+                     (default: https://raw.githubusercontent.com/schubergphilis/agents.md/main)
+
+Install sbp-agents itself:
+  curl -s https://raw.githubusercontent.com/schubergphilis/agents.md/main/sbp-agents \
+    | sudo install -m 755 /dev/stdin /usr/local/bin/sbp-agents
+EOF
+}
+
+# ─── entry point ─────────────────────────────────────────────────────────────
+
+COMMAND="${1:-help}"; shift || true
+
+# Collect remaining args, hoisting --global wherever it appears
+ARGS=()
+for arg in "$@"; do
+  if [[ "$arg" == "--global" ]]; then
+    GLOBAL=true
+  else
+    ARGS+=("$arg")
+  fi
+done
+
+case "$COMMAND" in
+  list)           cmd_list ;;
+  add)            cmd_add "${ARGS[0]:-}" ;;
+  update)         cmd_update ;;
+  remove)         cmd_remove "${ARGS[0]:-}" ;;
+  status)         cmd_status ;;
+  help|--help|-h) cmd_help ;;
+  *) die "unknown command: ${COMMAND}  (try: sbp-agents help)" ;;
+esac
