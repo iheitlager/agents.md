@@ -1,0 +1,45 @@
+# Convention pack manifest
+# Copy this file to your pack directory and fill in the fields.
+# See README.md at the repo root for field documentation.
+
+[pack]
+# Unique identifier — must match the catalog path (e.g. "system/language/python")
+id = "system/category/name"
+
+# Human-readable name
+name = "Pack Name"
+
+# One-line description of what conventions this pack encodes
+description = "Short description of the conventions this pack enforces"
+
+# Semantic version of this pack
+version = "0.1.0"
+
+# AAE enforcement level (1-4):
+#   1 = inform (docs only)
+#   2 = soft enforce (agent instructions)
+#   3 = hook enforce (pre-commit / pre-push)
+#   4 = CI enforce (pipeline checks)
+aae_level = 2
+
+authors = ["Your Name <you@example.com>"]
+
+[requirements]
+# CLI tools that must be installed for hooks/checks to work
+tools = []
+
+# Minimum language/runtime version (omit if not applicable)
+# min_python = "3.12"
+# min_node = "20"
+
+[targets]
+# Which files/dirs this pack installs into the target project
+agents_md = true     # AGENTS.md fragment
+claude_md = false    # CLAUDE.md fragment (Claude Code only)
+commands = false     # .claude/commands/ slash commands
+hooks = false        # .git/hooks/ pre-commit / pre-push scripts
+checks = false       # CI validation scripts
+
+[compatibility]
+# AI tools this pack has been verified with
+tools = ["claude-code", "opencode", "github-copilot", "cursor"]

@@ -1,56 +1,103 @@
-# Contributing to Schuberg Philis AGENTS.md
+# Contributing to agents.md
 
-Welcome! This repository captures Schuberg Philis engineering best practices as agent-readable instructions. We're excited to share our practices with the broader community and welcome contributions that improve functionality, clarity, security, and operational excellence.
+Welcome! This repository is a catalog of convention packs for AI-assisted engineering. Convention packs encode Schuberg Philis engineering standards as agent-readable instructions that can be installed into any project.
 
-## Quick Start
+## Quick start
 
 1. **Fork and clone** this repository
-2. **Find an existing examples**
-3. **Submit a pull request** following our guidelines below
+2. **Pick a taxonomy path** for your new convention pack (see below)
+3. **Copy the template**: `cp -r catalog/_template/ catalog/<axis>/<category>/<name>/`
+4. **Fill in the template** following the authoring standards
+5. **Submit a pull request**
 
-## What We're Looking For
+## Taxonomy
 
-**High-impact contributions:**
-- New AGENTS.md files for popular stacks and frameworks
-- Improved security practices and operational guidance
-- Clear introduction manuals
-- Clearer, more testable instructions for agents
+Packs live under one of two axes:
 
-## Content Standards
-
-### Writing Style
-- **Imperative voice**: "Use Prettier" not "You should use Prettier"
-- **Be explicit**: "Do X. Do not do Y." over vague recommendations
-- **Be testable**: Include commands agents can verify
-- **Short sentences**: Aim for clarity over cleverness
-
-### Security Requirements
-- **No secrets**: Use placeholders like `<API_KEY>` or `${SECRET_FROM_VAULT}`
-- **Pin versions**: Specify minimum versions for tools and dependencies
-- **Secure defaults**: Least privilege, scanners enabled, safe configurations
-- **Document risks**: Call out security implications of choices
-
-## Pull Request Guidelines
-
-### Branch Naming
-Use the pattern: `<type>/<short-description>`
-- `feat/golang-gin-agents`
-- `fix/terraform-modules-security`
-- `docs/contributing-guidelines`
-
-### Commit Messages
-Follow Conventional Commits format:
 ```
-<type>(scope): <description>
-
-feat(catalog/python): add Django AGENTS.md with security defaults
-fix(catalog/terraform): correct provider version pinning
-docs(readme): clarify acceptance criteria examples
+catalog/
+├── system/          # WHERE (technology you build with)
+│   ├── platform/    # terraform, docker, kubernetes, ansible
+│   ├── language/    # python, rust, go, typescript
+│   ├── data/        # postgresql, dbt, kafka
+│   └── runtime/     # aws, azure, sbp-cloud
+└── function/        # WHAT (cross-cutting concern)
+    ├── security/    # supply-chain, secrets, hardening
+    ├── testing/     # unit, integration, assurance
+    ├── observability/ # logging, metrics, sbom
+    ├── ci-cd/       # github-actions, release
+    ├── documentation/ # adr, openspec
+    └── ai/          # knowledge-base, agentic, prompting
 ```
 
-**Types:** feat, fix, docs, test, chore, refactor, perf, build, ci
+If your pack belongs under both axes (e.g. Python testing), use the primary axis and reference the secondary in your `manifest.toml`.
 
-### PR Description Template
+## Convention pack format
+
+Every pack contains:
+
+| File | Required | Purpose |
+|------|----------|---------|
+| `manifest.toml` | Yes | Pack metadata, version, AAE level |
+| `AGENTS.md` | Yes | Universal agent instruction fragment |
+| `CLAUDE.md` | No | Claude Code-specific additions |
+| `commands/` | No | `.claude/commands/` slash command files |
+| `hooks/` | No | pre-commit / pre-push enforcement scripts |
+| `checks/` | No | CI validation scripts |
+| `README.md` | Yes | Human-readable description |
+
+See `catalog/_template/` for the full template with inline documentation.
+
+## Authoring standards
+
+### Writing style
+
+- **Imperative voice**: "Run `ruff check src/`." not "You should run ruff."
+- **Be explicit**: "Do X. Do not do Y." over vague recommendations.
+- **Be testable**: Every instruction should include a command agents can run to verify.
+- **Short sentences**: Aim for clarity over cleverness.
+- **Section markers**: Use `<!-- BEGIN pack: id -->` and `<!-- END pack: id -->` in `AGENTS.md` so fragments can be merged and updated automatically.
+
+### Security requirements
+
+- **No secrets**: Use placeholders like `<API_KEY>` or `${SECRET_FROM_VAULT}`.
+- **Pin versions**: Specify minimum versions for tools and dependencies.
+- **Secure defaults**: Least privilege, scanners enabled, safe configurations.
+- **Document risks**: Call out security implications of choices.
+
+### AAE enforcement level
+
+Choose the right level for your pack:
+
+| Level | When to use | What to include |
+|-------|-------------|-----------------|
+| L1 | Aspirational or informational | `AGENTS.md` fragment only |
+| L2 | Standard conventions | `AGENTS.md` + acceptance criteria |
+| L3 | Critical standards | `AGENTS.md` + `hooks/` scripts |
+| L4 | Compliance requirements | `AGENTS.md` + `hooks/` + `checks/` |
+
+## Pull request guidelines
+
+### Branch naming
+
+```
+feat/catalog-system-language-rust
+fix/catalog-function-security-secrets
+docs/contributing-aae-levels
+```
+
+### Commit messages
+
+Follow Conventional Commits:
+
+```
+feat(catalog/system/language/python): add Python 3.12 convention pack
+fix(catalog/function/security/secrets): correct pre-commit hook path
+docs(contributing): clarify AAE enforcement levels
+```
+
+### PR description template
+
 ```markdown
 ## What
 Brief description of changes
@@ -58,69 +105,45 @@ Brief description of changes
 ## Why
 Problem being solved or value being added
 
-## How
-Technical approach and key decisions
+## Pack details
+- Taxonomy path: `catalog/<axis>/<category>/<name>/`
+- AAE level: L2 (soft enforce)
+- Tools required: uv, ruff, pyright
 
 ## Testing
-- [ ] Commands in Setup Commands are tested
-- [ ] Acceptance criteria are verifiable
+- [ ] AGENTS.md fragment is imperative and testable
+- [ ] manifest.toml fields are complete and valid
+- [ ] Hooks/checks are executable and exit cleanly on a fresh repo
 - [ ] No secrets or sensitive data included
 
 ## Checklist
-- [ ] Uses imperative, testable language
-- [ ] Includes security best practices
-- [ ] Links are valid and stable
-- [ ] YAML front matter is complete
+- [ ] Section markers present in AGENTS.md
+- [ ] README.md explains what the pack does and what it installs
+- [ ] manifest.toml `aae_level` matches the files included
 ```
 
-## Review Process
+## Review process
 
-### What We Look For
+Reviewers look for:
+
 - **Clarity**: Can an agent follow these instructions unambiguously?
 - **Security**: Are defaults secure? Any missing security considerations?
 - **Testability**: Are acceptance criteria objective and measurable?
 - **Alignment**: Does this match the Schuberg Philis way of working?
-- **Completeness**: Are all template sections addressed appropriately?
+- **Completeness**: Are all required template sections present?
 
-## Community Guidelines
+## Community guidelines
 
-### Code of Conduct
-- **Be respectful** in discussions and feedback
-- **Assume good intent** from contributors
-- **Focus on technical merit** over personal preferences
-- **Help newcomers** understand our standards
+- Be respectful in discussions and feedback.
+- Assume good intent from contributors.
+- Focus on technical merit over personal preferences.
+- Help newcomers understand the standards.
 
-### Getting Help
-- **Questions about standards**: Open a GitHub issue with the `question` label
-- **Technical problems**: Include error messages and environment details
-- **Unclear requirements**: Reference specific sections that need clarification
-
-
-## Advanced Contributions
-
-### Documentation Enhancements
-- Additional examples for complex scenarios
-- Integration guides for popular AI coding assistants
-- Best practices documentation beyond the template
-- Video tutorials for authoring AGENTS.md files
-
-## Recognition
-
-Contributors will be:
-- **Acknowledged** in release notes for significant contributions
-- **Added as collaborators** for sustained, high-quality contributions
-- **Featured** in our engineering blog for innovative practices
-
-## License and Attribution
-
-By contributing, you agree that your contributions will be licensed under the same license as this project. When referencing external sources or adapting existing patterns, please include appropriate attribution in your AGENTS.md file.
+**Questions?**
+- General questions: Open a GitHub issue
+- Security concerns: Contact @jverhoeks, @fbuters, or @iheitlager directly
+- Complex contributions: Open a discussion first to align on approach
 
 ---
 
-## Questions?
-
-- **General questions**: Open a GitHub issue
-- **Security concerns**: Check one of us directly (@jverhoeks, @fbuters, @iheitlager)
-- **Complex contributions**: Consider opening a discussion first to align on approach
-
-Thank you for helping us build better, more secure, and more operable systems through standardized agent instructions! 🚀
+By contributing, you agree that your contributions will be licensed under the Apache 2.0 license.
