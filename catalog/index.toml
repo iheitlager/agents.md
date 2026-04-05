@@ -3,10 +3,18 @@
 # Add an entry here for each pack under catalog/.
 # Format: one [[pack]] block per convention pack.
 
-# [[pack]]
-# id = "system/language/python"
-# name = "Python"
-# description = "Python 3.12+ conventions: uv, ruff, pyright, pytest"
-# version = "1.0.0"
-# aae_level = "L3"
-# path = "catalog/system/language/python"
+[[pack]]
+id = "system/language/python"
+name = "Python"
+description = "Python 3.12+ conventions: uv, ruff, pyright, isort, pytest"
+version = "1.0.0"
+aae_level = "L2"
+path = "catalog/system/language/python"
+
+[[pack]]
+id = "function/security/supply-chain"
+name = "Supply Chain Security"
+description = "GitHub Actions supply chain hardening: pin actions to full commit SHA, not mutable tags"
+version = "1.0.0"
+aae_level = "L2"
+path = "catalog/function/security/supply-chain"

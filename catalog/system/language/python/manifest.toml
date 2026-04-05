@@ -1,0 +1,27 @@
+[pack]
+id = "system/language/python"
+name = "Python"
+description = "Python 3.12+ conventions: uv, ruff, pyright, isort, pytest"
+version = "1.0.0"
+aae_level = "L2"
+authors = ["Ilja Heitlager <iheitlager@schubergphilis.com>"]
+homepage = "https://docs.astral.sh/uv/"
+license = "Apache-2.0"
+deprecated = false
+
+[requirements]
+tools = ["uv", "ruff", "pyright"]
+min_python = "3.12"
+
+[targets]
+agents_md = true
+claude_md = true
+commands = false
+hooks = false
+checks = false
+
+[relations]
+related = ["function/testing/integration"]
+
+[compatibility]
+tools = ["claude-code", "opencode", "github-copilot", "cursor"]
