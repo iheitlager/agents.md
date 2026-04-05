@@ -1,0 +1,24 @@
+[pack]
+id = "function/ai/convention-authoring"
+name = "Convention Authoring"
+description = "Teaches AI agents how to author, validate, and publish convention packs for the sbp-agents catalog"
+version = "0.1.0"
+aae_level = "L4"
+authors = ["Ilja Heitlager <iheitlager@schubergphilis.com>"]
+license = "Apache-2.0"
+
+[requirements]
+tools = ["tomlq", "bash"]
+
+[targets]
+agents_md = true
+claude_md = true
+commands = true
+hooks = true
+checks = true
+
+[relations]
+# No dependencies — this pack is intentionally self-contained so it can bootstrap the catalog
+
+[compatibility]
+tools = ["claude-code", "opencode", "github-copilot", "cursor"]
