@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# pre-commit hook template for convention packs (AAE L3)
+# Copy to .git/hooks/pre-commit and make executable: chmod +x .git/hooks/pre-commit
+
+set -euo pipefail
+
+echo "[pack] Running pre-commit checks..."
+
+# Add your checks here. Exit non-zero to block the commit.
+
+# Example: run linter
+# tool check src/ || { echo "[pack] Linting failed. Fix errors before committing."; exit 1; }
+
+echo "[pack] Pre-commit checks passed."
