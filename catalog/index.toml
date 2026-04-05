@@ -18,3 +18,11 @@ description = "GitHub Actions supply chain hardening: pin actions to full commit
 version = "1.0.0"
 aae_level = "L2"
 path = "catalog/function/security/supply-chain"
+
+[[pack]]
+id = "function/ai/convention-authoring"
+name = "Convention Authoring"
+description = "Teaches AI agents how to author, validate, and publish convention packs for the sbp-agents catalog"
+version = "0.1.0"
+aae_level = "L4"
+path = "catalog/function/ai/convention-authoring"
