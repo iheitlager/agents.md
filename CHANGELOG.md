@@ -8,6 +8,25 @@ This changelog records not just what changed but *how the thinking evolved* — 
 
 ---
 
+## [1.0.0] — 2026-04-05 · First real conventions
+
+### First production-grade packs
+
+With the format proven by `convention-authoring`, the first user-facing packs land. These validate the taxonomy and show what a well-formed pack looks like at each axis.
+
+### Added
+
+- `catalog/system/language/python` — Python 3.12+ conventions: `uv`, `ruff`, `pyright`, `pytest` (L2: agent instructions + acceptance criteria)
+- `catalog/function/security/supply-chain` — GitHub Actions SHA pinning: pin every `uses:` to a full commit SHA, not a mutable tag (L2: agent instructions + acceptance criteria)
+
+### Design decisions
+
+- **Python pack as the canonical `system/` example**: a language pack covers toolchain, style, type safety, and testing in one unit. It does *not* include hooks — the agent instruction level (L2) is sufficient for style rules that developers catch in review.
+- **Supply-chain pack as the canonical `function/` example**: cross-cutting concerns don't belong to any one language or platform. SHA pinning applies regardless of what language the project is written in. It also demonstrates why `function/` packs sometimes have no `CLAUDE.md` — the convention is tool-agnostic.
+- **L2 for both initial packs**: we deliberately started at L2 (soft enforce via agent instructions) rather than L3/L4. The goal is to change agent behaviour first, then escalate enforcement to hooks and CI once teams are familiar with the convention.
+
+---
+
 ## [0.1.0] — 2026-04-05 · The architecture takes shape
 
 ### The pivot: from prompts to convention packs
@@ -41,25 +60,6 @@ This release establishes the foundation: the two-axis taxonomy, the pack format,
 
 ---
 
-## [1.0.0] — 2026-04-05 · First real conventions
-
-### First production-grade packs
-
-With the format proven by `convention-authoring`, the first user-facing packs land. These validate the taxonomy and show what a well-formed pack looks like at each axis.
-
-### Added
-
-- `catalog/system/language/python` — Python 3.12+ conventions: `uv`, `ruff`, `pyright`, `pytest` (L2: agent instructions + acceptance criteria)
-- `catalog/function/security/supply-chain` — GitHub Actions SHA pinning: pin every `uses:` to a full commit SHA, not a mutable tag (L2: agent instructions + acceptance criteria)
-
-### Design decisions
-
-- **Python pack as the canonical `system/` example**: a language pack covers toolchain, style, type safety, and testing in one unit. It does *not* include hooks — the agent instruction level (L2) is sufficient for style rules that developers catch in review.
-- **Supply-chain pack as the canonical `function/` example**: cross-cutting concerns don't belong to any one language or platform. SHA pinning applies regardless of what language the project is written in. It also demonstrates why `function/` packs sometimes have no `CLAUDE.md` — the convention is tool-agnostic.
-- **L2 for both initial packs**: we deliberately started at L2 (soft enforce via agent instructions) rather than L3/L4. The goal is to change agent behaviour first, then escalate enforcement to hooks and CI once teams are familiar with the convention.
-
----
-
 ## [pre-history] — Aug–Sep 2025 · Modular prompt system
 
 The original incarnation was a collection of prompt fragments organized by topic. Lessons learned that shaped the 2026 redesign:
@@ -71,6 +71,6 @@ The original incarnation was a collection of prompt fragments organized by topic
 
 ---
 
-[Unreleased]: https://github.com/schubergphilis/agents.md/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/schubergphilis/agents.md/compare/v0.1.0...v1.0.0
-[0.1.0]: https://github.com/schubergphilis/agents.md/releases/tag/v0.1.0
+[Unreleased]: https://github.com/iheitlager/agents.md/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/iheitlager/agents.md/compare/v0.1.0...v1.0.0
+[0.1.0]: https://github.com/iheitlager/agents.md/releases/tag/v0.1.0
